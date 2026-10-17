@@ -4,12 +4,12 @@
 set -euo pipefail
 
 APK=app/build/outputs/apk/debug/app-debug.apk
-PKG=com.naufal.hawaweather
+PKG=id.my.naufalputra.hawa
 URL=https://hawa-weather.vercel.app
 
 adb logcat -c
 adb install -r "$APK"
-adb shell am start -W -n "$PKG/.MainActivity"
+adb shell am start -W -n "$PKG/com.naufal.hawaweather.MainActivity"
 
 for _ in $(seq 1 60); do
   adb logcat -d | grep -q "HawaWeb.*PAGE_FINISHED" && break
@@ -25,14 +25,14 @@ grep -q "HawaWeb.*PAGE_FINISHED $URL" /tmp/logcat.txt || { echo "PAGE NOT LOADED
 if grep -q "HawaWeb.*PAGE_ERROR" /tmp/logcat.txt; then echo "PAGE ERROR"; exit 1; fi
 
 echo "--- widget provider ---"
-adb shell dumpsys appwidget | grep -q "cmp:ComponentInfo{$PKG/$PKG.HawaWidget" \
+adb shell dumpsys appwidget | grep -q "cmp:ComponentInfo{$PKG/com.naufal.hawaweather.HawaWidget" \
   || { echo "WIDGET PROVIDER NOT REGISTERED"; exit 1; }
 
 echo "--- crashes ---"
 if grep -E "FATAL EXCEPTION|AndroidRuntime: E " /tmp/logcat.txt; then echo "CRASH DETECTED"; exit 1; fi
 
 echo "--- resumed ---"
-adb shell dumpsys activity activities | grep -q "topResumedActivity.*$PKG/.MainActivity" \
+adb shell dumpsys activity activities | grep -q "topResumedActivity.*$PKG/com.naufal.hawaweather.MainActivity" \
   || { echo "APP NOT IN FOREGROUND"; exit 1; }
 
 adb exec-out screencap -p > /tmp/screen.png
