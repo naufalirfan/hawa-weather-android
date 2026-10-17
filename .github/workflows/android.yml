@@ -40,7 +40,10 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        run: gradle bundleRelease --stacktrace
+        run: |
+          gradle bundleRelease --stacktrace
+          grep -ho 'android:\(min\|target\)SdkVersion="[0-9]*"\|versionCode="[0-9]*"\|versionName="[^"]*"' \
+            $(find app/build/intermediates -path '*release*' -name AndroidManifest.xml | head -1)
 
       - uses: actions/upload-artifact@v4
         with:
