@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hawa Weather</string>
+    <string name="widget_name">Hawa Weather</string>
+    <string name="app_url">https://hawa-weather.vercel.app</string>
+</resources>
