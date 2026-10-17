@@ -48,31 +48,7 @@ jobs:
             set -e
             adb logcat -c
             gradle connectedDebugAndroidTest --stacktrace
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell am start -W -n com.naufal.hawaweather/.MainActivity
-            # tunggu WebView selesai memuat halaman (maks 120s)
-            for i in $(seq 1 60); do
-              adb logcat -d | grep -q "HawaWeb.*PAGE_FINISHED" && break
-              sleep 2
-            done
-            adb logcat -d > /tmp/logcat.txt
-            echo "--- page load ---"
-            grep "HawaWeb" /tmp/logcat.txt | tail -20
-            grep -q "HawaWeb.*PAGE_FINISHED https://hawa-weather.vercel.app" /tmp/logcat.txt \
-              || (echo "PAGE NOT LOADED"; exit 1)
-            ! grep "HawaWeb.*PAGE_ERROR" /tmp/logcat.txt \
-              || (echo "PAGE ERROR"; exit 1)
-            echo "--- widget provider ---"
-            adb shell dumpsys appwidget | grep -q "cmp:ComponentInfo{com.naufal.hawaweather/com.naufal.hawaweather.HawaWidget" \
-              || (echo "WIDGET PROVIDER NOT REGISTERED"; exit 1)
-            echo "--- crashes ---"
-            ! grep -E "FATAL EXCEPTION|AndroidRuntime: E " /tmp/logcat.txt \
-              || (echo "CRASH DETECTED"; exit 1)
-            echo "--- resumed ---"
-            adb shell dumpsys activity activities | grep -q "topResumedActivity.*com.naufal.hawaweather/.MainActivity" \
-              || (echo "APP NOT IN FOREGROUND"; exit 1)
-            adb exec-out screencap -p > /tmp/screen.png
-            echo SMOKE_OK
+            bash scripts/smoke.sh
 
       - uses: actions/upload-artifact@v4
         if: always()
