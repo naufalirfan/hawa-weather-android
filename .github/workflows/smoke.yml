@@ -59,11 +59,11 @@ jobs:
             echo "--- widget providers ---"
             adb shell dumpsys appwidget | grep -i -A3 hawaweather || (echo "WIDGET PROVIDER NOT REGISTERED"; exit 1)
             echo "--- crashes ---"
-            if adb logcat -d | grep -E "FATAL EXCEPTION|AndroidRuntime.*E "; then
-              echo "CRASH DETECTED"; exit 1
-            fi
-            echo "--- webview loaded ---"
-            adb shell dumpsys webviewupdate | head -5 || true
+            adb logcat -d > /tmp/logcat.txt
+            ! grep -E "FATAL EXCEPTION|AndroidRuntime: E " /tmp/logcat.txt
+            echo "--- webview ---"
+            grep -c "chromium" /tmp/logcat.txt || true
+            ! grep -E "chromium.*(ERR_|net::ERR)" /tmp/logcat.txt
             adb exec-out screencap -p > /tmp/screen.png
             ls -l /tmp/screen.png
             echo SMOKE_OK
