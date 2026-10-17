@@ -6,6 +6,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : ComponentActivity() {
     @SuppressLint("SetJavaScriptEnabled")
@@ -17,6 +19,12 @@ class MainActivity : ComponentActivity() {
             settings.mediaPlaybackRequiresUserGesture = false
             webViewClient = WebViewClient()
             loadUrl(getString(R.string.app_url))
+        }
+        // targetSdk 36: edge-to-edge dipaksa, geser konten keluar dari status/nav bar
+        ViewCompat.setOnApplyWindowInsetsListener(web) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
         }
         setContentView(web)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
