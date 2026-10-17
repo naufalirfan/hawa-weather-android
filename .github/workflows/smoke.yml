@@ -30,9 +30,6 @@ jobs:
       - name: Android Lint (release)
         run: gradle lintRelease --stacktrace
 
-      - name: Assemble debug
-        run: gradle assembleDebug --stacktrace
-
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -50,22 +47,31 @@ jobs:
           script: |
             set -e
             adb logcat -c
+            gradle connectedDebugAndroidTest --stacktrace
             adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell pm list packages | grep com.naufal.hawaweather
             adb shell am start -W -n com.naufal.hawaweather/.MainActivity
-            sleep 15
-            echo "--- resumed activity ---"
-            adb shell dumpsys activity activities | grep -E "ResumedActivity|topResumedActivity" || true
-            echo "--- widget providers ---"
-            adb shell dumpsys appwidget | grep -i -A3 hawaweather || (echo "WIDGET PROVIDER NOT REGISTERED"; exit 1)
-            echo "--- crashes ---"
+            # tunggu WebView selesai memuat halaman (maks 120s)
+            for i in $(seq 1 60); do
+              adb logcat -d | grep -q "HawaWeb.*PAGE_FINISHED" && break
+              sleep 2
+            done
             adb logcat -d > /tmp/logcat.txt
-            ! grep -E "FATAL EXCEPTION|AndroidRuntime: E " /tmp/logcat.txt
-            echo "--- webview ---"
-            grep -c "chromium" /tmp/logcat.txt || true
-            ! grep -E "chromium.*(ERR_|net::ERR)" /tmp/logcat.txt
+            echo "--- page load ---"
+            grep "HawaWeb" /tmp/logcat.txt | tail -20
+            grep -q "HawaWeb.*PAGE_FINISHED https://hawa-weather.vercel.app" /tmp/logcat.txt \
+              || (echo "PAGE NOT LOADED"; exit 1)
+            ! grep "HawaWeb.*PAGE_ERROR" /tmp/logcat.txt \
+              || (echo "PAGE ERROR"; exit 1)
+            echo "--- widget provider ---"
+            adb shell dumpsys appwidget | grep -q "cmp:ComponentInfo{com.naufal.hawaweather/com.naufal.hawaweather.HawaWidget" \
+              || (echo "WIDGET PROVIDER NOT REGISTERED"; exit 1)
+            echo "--- crashes ---"
+            ! grep -E "FATAL EXCEPTION|AndroidRuntime: E " /tmp/logcat.txt \
+              || (echo "CRASH DETECTED"; exit 1)
+            echo "--- resumed ---"
+            adb shell dumpsys activity activities | grep -q "topResumedActivity.*com.naufal.hawaweather/.MainActivity" \
+              || (echo "APP NOT IN FOREGROUND"; exit 1)
             adb exec-out screencap -p > /tmp/screen.png
-            ls -l /tmp/screen.png
             echo SMOKE_OK
 
       - uses: actions/upload-artifact@v4
@@ -73,4 +79,11 @@ jobs:
         with:
           name: emulator-screen
           path: /tmp/screen.png
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: logcat
+          path: /tmp/logcat.txt
           if-no-files-found: ignore
