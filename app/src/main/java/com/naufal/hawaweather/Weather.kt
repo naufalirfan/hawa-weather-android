@@ -29,19 +29,26 @@ object Weather {
                 "&current=temperature_2m,apparent_temperature,weather_code&timezone=auto"
         )
         val conn = (url.openConnection() as HttpURLConnection).apply {
-            connectTimeout = 8000
-            readTimeout = 8000
-            setRequestProperty("User-Agent", "HawaWeatherWidget/1.0")
+            connectTimeout = 10000
+            readTimeout = 10000
+            setRequestProperty("User-Agent", "HawaWeatherWidget/1.0 (Android; id.my.naufalputra.hawa)")
+            setRequestProperty("Accept", "application/json")
         }
-        conn.inputStream.bufferedReader().use { r ->
-            val cur = JSONObject(r.readText()).getJSONObject("current")
-            Current(
-                temp = cur.getDouble("temperature_2m"),
-                code = cur.getInt("weather_code"),
-                feels = cur.getDouble("apparent_temperature"),
-            )
-        }.also { conn.disconnect() }
+        if (conn.responseCode in 200..299) {
+            conn.inputStream.bufferedReader().use { r ->
+                val cur = JSONObject(r.readText()).getJSONObject("current")
+                Current(
+                    temp = cur.getDouble("temperature_2m"),
+                    code = cur.getInt("weather_code"),
+                    feels = cur.getDouble("apparent_temperature"),
+                )
+            }.also { conn.disconnect() }
+        } else {
+            conn.disconnect()
+            null
+        }
     } catch (e: Exception) {
+        android.util.Log.e("HawaWeather", "fetch failed for lat=$lat, lon=$lon", e)
         null
     }
 }
