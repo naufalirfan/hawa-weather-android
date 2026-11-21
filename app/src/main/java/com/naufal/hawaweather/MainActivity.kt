@@ -115,7 +115,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh home screen widget automatically when app is active
+        // Refresh home screen widgets automatically when app is active
         HawaWidget.refreshAll(this)
+        HawaClockWidget.refreshAll(this)
     }
 }

@@ -22,6 +22,22 @@ object Weather {
         else -> "🌡️"
     }
 
+    /** WMO weather code -> Indonesian condition name. */
+    fun conditionName(code: Int): String = when (code) {
+        0 -> "Cerah"
+        1, 2 -> "Cerah Berawan"
+        3 -> "Mendung"
+        45, 48 -> "Berkabut"
+        51, 53, 55, 56, 57 -> "Gerimis"
+        61, 63, 65 -> "Hujan"
+        66, 67 -> "Hujan Dingin"
+        71, 73, 75, 77 -> "Salju"
+        80, 81, 82 -> "Hujan Ringan"
+        85, 86 -> "Hujan Salju"
+        95, 96, 99 -> "Badai Petir"
+        else -> "Berawan"
+    }
+
     /** Blocking fetch; call off the main thread. Returns null on any failure. */
     fun fetch(lat: Double, lon: Double): Current? = try {
         val url = URL(
