@@ -33,6 +33,8 @@ class MainActivity : ComponentActivity() {
             settings.mediaPlaybackRequiresUserGesture = false
             settings.setSupportMultipleWindows(true)
             settings.javaScriptCanOpenWindowsAutomatically = true
+            settings.cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+            clearCache(false)
 
             // Seamless Google Sign-In: Remove "; wv" marker so Google OAuth does not block or degrade WebView
             val defaultUa = settings.userAgentString
