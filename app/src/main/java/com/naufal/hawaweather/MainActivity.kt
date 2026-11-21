@@ -44,6 +44,21 @@ class MainActivity : ComponentActivity() {
             cookieManager.setAcceptThirdPartyCookies(this, true)
 
             webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                    val urlStr = request.url.toString()
+                    if (urlStr.startsWith("https://accounts.google.com") ||
+                        urlStr.contains("naufalputra.my.id") ||
+                        urlStr.contains("hawa") ||
+                        urlStr.startsWith("https://lh3.googleusercontent.com")) {
+                        return false
+                    }
+                    return try {
+                        startActivity(Intent(Intent.ACTION_VIEW, request.url))
+                        true
+                    } catch (e: Exception) {
+                        false
+                    }
+                }
                 override fun onPageFinished(view: WebView, url: String) {
                     android.util.Log.i("HawaWeb", "PAGE_FINISHED $url")
                 }
@@ -67,6 +82,7 @@ class MainActivity : ComponentActivity() {
                     isUserGesture: Boolean,
                     resultMsg: android.os.Message?
                 ): Boolean {
+                    val popupDialog = android.app.Dialog(this@MainActivity, android.R.style.Theme_DeviceDefault_NoActionBar_Fullscreen)
                     val popupWeb = WebView(this@MainActivity).apply {
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
@@ -75,7 +91,7 @@ class MainActivity : ComponentActivity() {
                         webViewClient = object : WebViewClient() {
                             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                                 val urlStr = request.url.toString()
-                                if (urlStr.startsWith("https://accounts.google.com") || urlStr.contains("hawa")) {
+                                if (urlStr.startsWith("https://accounts.google.com") || urlStr.contains("hawa") || urlStr.contains("naufalputra.my.id")) {
                                     return false
                                 }
                                 return try {
@@ -86,7 +102,14 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+                        webChromeClient = object : WebChromeClient() {
+                            override fun onCloseWindow(window: WebView?) {
+                                popupDialog.dismiss()
+                            }
+                        }
                     }
+                    popupDialog.setContentView(popupWeb)
+                    popupDialog.show()
                     val transport = resultMsg?.obj as? WebView.WebViewTransport
                     transport?.webView = popupWeb
                     resultMsg?.sendToTarget()
