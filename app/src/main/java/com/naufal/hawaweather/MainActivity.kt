@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -12,12 +13,72 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var web: WebView
+    private lateinit var googleSignInClient: GoogleSignInClient
+
+    private val googleSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            val idToken = account?.idToken
+            if (idToken != null) {
+                runOnUiThread {
+                    web.evaluateJavascript(
+                        "window.onNativeGoogleLoginSuccess && window.onNativeGoogleLoginSuccess('$idToken')",
+                        null
+                    )
+                }
+            } else {
+                runOnUiThread {
+                    web.evaluateJavascript(
+                        "window.onNativeGoogleLoginError && window.onNativeGoogleLoginError('Gagal mendapatkan ID token dari Google')",
+                        null
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("HawaAuth", "Google sign-in exception: ${e.message}")
+            val safeMsg = e.message?.replace("'", "\\'")?.replace("\n", " ") ?: "Login dibatalkan"
+            runOnUiThread {
+                web.evaluateJavascript(
+                    "window.onNativeGoogleLoginError && window.onNativeGoogleLoginError('$safeMsg')",
+                    null
+                )
+            }
+        }
+    }
+
+    fun startNativeGoogleSignIn() {
+        // Sign out first so user can choose account or switch account if desired
+        googleSignInClient.signOut().addOnCompleteListener {
+            val signInIntent = googleSignInClient.signInIntent
+            googleSignInLauncher.launch(signInIntent)
+        }
+    }
+
+    class WebAppInterface(private val activity: MainActivity) {
+        @JavascriptInterface
+        fun loginWithGoogle() {
+            activity.runOnUiThread {
+                activity.startNativeGoogleSignIn()
+            }
+        }
+
+        @JavascriptInterface
+        fun isAndroidApp(): Boolean = true
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,6 +87,14 @@ class MainActivity : ComponentActivity() {
         // Set matching dark status bar color
         window.statusBarColor = Color.parseColor("#070A14")
 
+        // Initialize Native Google Sign-In Client
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.google_web_client_id))
+            .requestEmail()
+            .requestProfile()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
         web = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
@@ -33,10 +102,13 @@ class MainActivity : ComponentActivity() {
             settings.mediaPlaybackRequiresUserGesture = false
             settings.setSupportMultipleWindows(true)
             settings.javaScriptCanOpenWindowsAutomatically = true
-            settings.cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
-            clearCache(false)
+            settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
+            clearCache(true)
 
-            // Seamless Google Sign-In: Remove "; wv" marker so Google OAuth does not block or degrade WebView
+            // Register native bridge for seamless 1-tap Google Sign-In
+            addJavascriptInterface(WebAppInterface(this@MainActivity), "Android")
+
+            // Remove "; wv" marker so Google OAuth does not block or degrade WebView
             val defaultUa = settings.userAgentString
             settings.userAgentString = defaultUa.replace("; wv", "")
 
@@ -44,6 +116,7 @@ class MainActivity : ComponentActivity() {
             val cookieManager = CookieManager.getInstance()
             cookieManager.setAcceptCookie(true)
             cookieManager.setAcceptThirdPartyCookies(this, true)
+            cookieManager.flush()
 
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
