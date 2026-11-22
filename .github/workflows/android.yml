@@ -32,23 +32,20 @@ jobs:
       - name: Unit tests
         run: gradle testDebugUnitTest --stacktrace
 
-      - name: Assemble debug APK
-        run: gradle assembleDebug --stacktrace
-
-      - name: Bundle release AAB
+      - name: Build release APK and AAB
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          gradle bundleRelease --stacktrace
+          gradle assembleRelease bundleRelease --stacktrace
           grep -ho 'android:\(min\|target\)SdkVersion="[0-9]*"\|versionCode="[0-9]*"\|versionName="[^"]*"' \
             $(find app/build/intermediates -path '*release*' -name AndroidManifest.xml | head -1)
 
       - uses: actions/upload-artifact@v4
         with:
-          name: hawa-weather-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: hawa-weather-release-apk
+          path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 30
 
@@ -67,7 +64,7 @@ jobs:
           name: "Nightly (auto-built)"
           prerelease: true
           files: |
-            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
             app/build/outputs/bundle/release/*.aab
 
       - name: Deploy to Google Play Console
