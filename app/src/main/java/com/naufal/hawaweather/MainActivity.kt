@@ -16,6 +16,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import android.widget.FrameLayout
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -229,14 +230,23 @@ class MainActivity : ComponentActivity() {
             )
         )
 
-        // Apply system bar insets so content never collides with status/navigation bars
-        ViewCompat.setOnApplyWindowInsetsListener(web) { v, insets ->
+        // Wrap WebView in FrameLayout container so WindowInsets (status bar / punch hole / navigation bar)
+        // are physically applied to the container, preventing status bar collision with the header
+        val container = FrameLayout(this).apply {
+            setBackgroundColor(Color.parseColor("#131416"))
+            addView(web, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(container) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
-        setContentView(web)
-        ViewCompat.requestApplyInsets(web)
+        setContentView(container)
+        ViewCompat.requestApplyInsets(container)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
