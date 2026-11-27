@@ -12,6 +12,8 @@
 -keep public class * extends android.appwidget.AppWidgetProvider
 
 # Data classes and model parsing if any
+-keep class com.naufal.hawaweather.Weather { *; }
+-keep class com.naufal.hawaweather.Current { *; }
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }

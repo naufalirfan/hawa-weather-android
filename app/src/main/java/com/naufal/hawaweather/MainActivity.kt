@@ -60,6 +60,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ -> }
+
     fun startNativeGoogleSignIn() {
         // Sign out first so user can choose account or switch account if desired
         googleSignInClient.signOut().addOnCompleteListener {
@@ -99,11 +103,15 @@ class MainActivity : ComponentActivity() {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.databaseEnabled = true
+            settings.allowFileAccess = true
+            settings.allowContentAccess = true
+            settings.allowFileAccessFromFileURLs = true
+            settings.allowUniversalAccessFromFileURLs = true
+            settings.setGeolocationEnabled(true)
             settings.mediaPlaybackRequiresUserGesture = false
             settings.setSupportMultipleWindows(true)
             settings.javaScriptCanOpenWindowsAutomatically = true
-            settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
-            clearCache(true)
+            settings.cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
 
             // Register native bridge for seamless 1-tap Google Sign-In
             addJavascriptInterface(WebAppInterface(this@MainActivity), "Android")
@@ -121,7 +129,18 @@ class MainActivity : ComponentActivity() {
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                     val urlStr = request.url.toString()
-                    if (urlStr.startsWith("https://accounts.google.com") ||
+                    if (urlStr.startsWith("intent:")) {
+                        return try {
+                            val intent = Intent.parseUri(urlStr, Intent.URI_INTENT_SCHEME)
+                            startActivity(intent)
+                            true
+                        } catch (e: Exception) {
+                            android.util.Log.e("HawaWeb", "Failed to handle intent: ${e.message}")
+                            false
+                        }
+                    }
+                    if (urlStr.startsWith("file:///android_asset/") ||
+                        urlStr.startsWith("https://accounts.google.com") ||
                         urlStr.contains("naufalputra.my.id") ||
                         urlStr.contains("hawa") ||
                         urlStr.startsWith("https://lh3.googleusercontent.com")) {
@@ -146,6 +165,13 @@ class MainActivity : ComponentActivity() {
             }
 
             webChromeClient = object : WebChromeClient() {
+                override fun onGeolocationPermissionsShowPrompt(
+                    origin: String,
+                    callback: android.webkit.GeolocationPermissions.Callback
+                ) {
+                    callback.invoke(origin, true, false)
+                }
+
                 override fun onConsoleMessage(m: android.webkit.ConsoleMessage): Boolean {
                     android.util.Log.i("HawaWeb", "CONSOLE ${m.messageLevel()} ${m.message()}")
                     return true
@@ -192,8 +218,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            loadUrl(getString(R.string.app_url))
+            loadUrl("file:///android_asset/index.html")
         }
+
+        // Request location permission for weather coordinates
+        locationPermissionLauncher.launch(
+            arrayOf(
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
 
         // Apply system bar insets so content never collides with status/navigation bars
         ViewCompat.setOnApplyWindowInsetsListener(web) { v, insets ->
