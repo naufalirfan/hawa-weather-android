@@ -335,7 +335,7 @@
            Right Half (#widget-zone-b) -> Launches Android Clock intent URI
              with clean live clock fallback dialog on desktop browsers
     ===================================================================== -->
-    <section id="view-widget" class="app-view is-active home-wallpaper no-scrollbar">
+    <section id="view-widget" class="app-view home-wallpaper no-scrollbar hidden" style="display: none !important;">
       <div class="flex flex-col justify-between min-h-full px-5 pt-10 pb-8">
         <div>
           <!-- Simulated Mobile Status Bar -->
@@ -443,7 +443,7 @@
     <!-- =====================================================================
          VIEW 2: MAIN WEATHER VIEW (#view-main)
     ===================================================================== -->
-    <section id="view-main" class="app-view no-scrollbar">
+    <section id="view-main" class="app-view is-active no-scrollbar">
       <!-- Pull-to-Refresh Indicator -->
       <div id="ptr-indicator" aria-hidden="true">
         <div class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#1E1F23]/95 border border-white/10 shadow-xl">
@@ -458,8 +458,8 @@
       <!-- Sticky Top Navigation Bar -->
       <header id="main-header" class="sticky top-0 z-30 px-4 pt-4 pb-2.5">
         <div class="flex items-center justify-between gap-2">
-          <!-- Back to Home Screen Widget -->
-          <button id="btn-to-widget" type="button" class="p-2 -ml-1 rounded-full hover:bg-white/[0.08] active:scale-95 transition" aria-label="Home Widget">
+          <!-- Back to Home Screen Widget (Hidden as per user request to directly show weather) -->
+          <button id="btn-to-widget" type="button" class="hidden p-2 -ml-1 rounded-full hover:bg-white/[0.08] active:scale-95 transition" aria-label="Home Widget">
             <svg class="w-5 h-5 text-white/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
               <path d="M19 12H5M12 19l-7-7 7-7"></path>
             </svg>
@@ -1513,7 +1513,7 @@
 
       let selectedDayOffset = 1; // 0 = Yesterday, 1 = Today, 2..6 = Next 5 days
       let selectedTrendDay = 1;
-      let activeViewId = 'view-widget';
+      let activeViewId = 'view-main';
 
       /* =====================================================================
          5. UNIT CONVERSION & FORMATTING HELPERS
