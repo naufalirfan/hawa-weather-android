@@ -32,10 +32,22 @@ class WidgetConfigActivity : Activity() {
         root.addView(ListView(this).apply {
             adapter = ArrayAdapter(this@WidgetConfigActivity, android.R.layout.simple_list_item_1, names)
             setOnItemClickListener { _, _, pos, _ ->
+                val chosenCity = names[pos]
+                val mgr = AppWidgetManager.getInstance(this@WidgetConfigActivity)
+                val info = mgr.getAppWidgetInfo(widgetId)
+                val isClock = info?.provider?.className?.contains("HawaClockWidget") == true
+
                 getSharedPreferences(HawaWidget.PREFS, MODE_PRIVATE).edit()
-                    .putString("city_$widgetId", names[pos]).apply()
+                    .putString("city_$widgetId", chosenCity).apply()
+                getSharedPreferences(HawaClockWidget.PREFS, MODE_PRIVATE).edit()
+                    .putString("city_$widgetId", chosenCity).apply()
+
                 setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId))
-                HawaWidget.render(this@WidgetConfigActivity, AppWidgetManager.getInstance(this@WidgetConfigActivity), widgetId)
+                if (isClock) {
+                    HawaClockWidget.render(this@WidgetConfigActivity, mgr, widgetId)
+                } else {
+                    HawaWidget.render(this@WidgetConfigActivity, mgr, widgetId)
+                }
                 finish()
             }
         })

@@ -10,8 +10,8 @@ object Weather {
     /** WMO weather code -> emoji. */
     fun icon(code: Int): String = when (code) {
         0 -> "☀️"
-        1, 2 -> "🌤️"
-        3 -> "☁️"
+        1 -> "🌤️"
+        2, 3 -> "☁️"
         45, 48 -> "🌫️"
         51, 53, 55, 56, 57 -> "🌦️"
         61, 63, 65, 66, 67 -> "🌧️"
@@ -25,7 +25,8 @@ object Weather {
     /** WMO weather code -> Indonesian condition name. */
     fun conditionName(code: Int): String = when (code) {
         0 -> "Cerah"
-        1, 2 -> "Cerah Berawan"
+        1 -> "Cerah Berawan"
+        2 -> "Umumnya berawan"
         3 -> "Mendung"
         45, 48 -> "Berkabut"
         51, 53, 55, 56, 57 -> "Gerimis"
